@@ -5,7 +5,7 @@ approach_settings:
     projection_mode: cmp                      # alias of projection format used in the developed approach
   video:  
     tile_width_num: 6                         # number of horizontally segmented video tiles
-    tile_height_num: 6                        # number of vertically segmented video tiles
+    tile_height_num: 12                        # number of vertically segmented video tiles
     hw_size: 2                                # historical window for predicting motion, in seconds
     pw_size: 1                                # prediction window for predicting motion, in chunks
     converted:                                
@@ -18,6 +18,6 @@ approach_settings:
     height: 1080                              # height of background stream
     width: 1920                               # width of background stream
   ffmpeg:
-    ffmpeg_path: ~                            # absolute path, if there are different versions of ffmpeg, please specify the absolute path of the ffmpeg
+    ffmpeg_path: /data1/ztw/ffmpeg/bin/ffmpeg                            # absolute path, if there are different versions of ffmpeg, please specify the absolute path of the ffmpeg
     loglevel: error                           # log level of ffmpeg
     thread: 6                                 # number of threads running ffmpeg
