@@ -1,11 +1,11 @@
 # This is e3po system configuration file, which should not be changed.
 
-test_group: group_1                       # experiment group name, simulation results will be stored in their respective folders
+test_group: group_test1                       # experiment group name, simulation results will be stored in their respective folders
 project_path: ~
 
 e3po_settings:
   video:                                  # ------------------ The following are video settings ------------------- #
-    video_duration: 10                    # video duration, in second
+    video_duration: 2                    # video duration, in second
     chunk_duration: 2                     # chunk duration, in second
     video_fps: 30                         # video framerate, frames per second
     origin:
@@ -15,9 +15,9 @@ e3po_settings:
       height: 3840                        # original video pixel width
       width: 7680                         # original video pixel height
   encoding_params:                        # ------------------ The following are encoding settings ---------------- #
-    encoder: libx264                      # encoder type in ffmpeg
+    encoder: h264_nvenc                      # encoder type in ffmpeg h264_nvenc libx264 
     qp_list: [29]                         # qp value
-    preset: faster                        # preset parameter
+    preset: fast                        # preset parameter
     video_fps: 30                         # video framerate
     gop: 60                               # group of pictures
     bf: 0                                 # B frame in ffmpeg
