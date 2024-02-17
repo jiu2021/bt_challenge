@@ -272,7 +272,7 @@ def transcode_video(source_video_uri, src_proj, dst_proj, src_resolution, dst_re
 
 
 def segment_video(ffmpeg_settings, source_video_uri, dst_video_folder, segmentation_info):
-    """
+    f"""
     Segment video tile from the original video
 
     Parameters

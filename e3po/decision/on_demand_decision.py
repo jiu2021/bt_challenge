@@ -78,9 +78,9 @@ class OnDemandDecision(BaseDecision):
 
         curr_ts = 0
         motion_history = []
-        motion_record = pre_processing_client_log(self.system_opt)
+        motion_record = pre_processing_client_log(self.system_opt)  # 所有motion数据
         motion_clock = generate_motion_clock(self, motion_record)
-
+        # print(motion_record, len(motion_record))
         approach = importlib.import_module(self.approach_module_name)
         user_data = None
         # pre_download_duration
@@ -88,7 +88,7 @@ class OnDemandDecision(BaseDecision):
         dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info)
         write_decision_json(self.decision_json_uri, curr_ts, dl_list)
 
-        # after pre_download_duration
+        # after pre_download_duration 
         for motion_ts in motion_clock:
             curr_ts = motion_ts + self.pre_download_duration
             motion_history = update_motion(motion_ts, curr_ts, motion_history, motion_record[motion_ts])
