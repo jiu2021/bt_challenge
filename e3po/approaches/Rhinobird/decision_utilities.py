@@ -23,7 +23,7 @@ from e3po.utils.projection_utilities import fov_to_3d_polar_coord,\
     _3d_polar_coord_to_pixel_coord, pixel_coord_to_tile
 from sklearn.linear_model import LinearRegression
 from e3po.utils import get_logger
-from statsmodels.tsa.vector_ar.var_model import VAR
+# from statsmodels.tsa.vector_ar.var_model import VAR
 
 def predict_motion_tile1(motion_history, motion_history_size, motion_prediction_size):
     """

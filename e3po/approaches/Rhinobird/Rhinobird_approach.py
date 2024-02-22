@@ -25,7 +25,7 @@ import yaml
 
 from e3po import get_logger
 from e3po.utils.data_utilities import transcode_video, segment_video, resize_video
-from e3po.utils.decision_utilities import predict_motion_tile, tile_decision, generate_dl_list
+from e3po.approaches.Rhinobird.decision_utilities import predict_motion_tile, tile_decision, generate_dl_list
 from e3po.utils.projection_utilities import fov_to_3d_polar_coord, _3d_polar_coord_to_pixel_coord, \
     pixel_coord_to_tile, pixel_coord_to_relative_tile_coord
 
