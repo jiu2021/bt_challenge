@@ -26,7 +26,7 @@ from e3po.utils import pre_processing_client_log
 from e3po.utils.json import write_decision_json
 from e3po.utils.misc import generate_motion_clock
 from e3po.utils.misc import update_motion
-
+import json
 
 @decision_registry.register()
 class OnDemandDecision(BaseDecision):
@@ -75,7 +75,7 @@ class OnDemandDecision(BaseDecision):
         -------
             None
         """
-
+        predic_arr = []
         curr_ts = 0
         motion_history = []
         motion_record = pre_processing_client_log(self.system_opt)  # 所有motion数据
@@ -85,14 +85,19 @@ class OnDemandDecision(BaseDecision):
         user_data = None
         # pre_download_duration
         motion_history = update_motion(0, curr_ts, motion_history, motion_record[0])
-        dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info)
+        dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info, predic_arr)
         write_decision_json(self.decision_json_uri, curr_ts, dl_list)
+
 
         # after pre_download_duration 
         for motion_ts in motion_clock:
             curr_ts = motion_ts + self.pre_download_duration
             motion_history = update_motion(motion_ts, curr_ts, motion_history, motion_record[motion_ts])
-            dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info)
+            dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info, predic_arr)
             write_decision_json(self.decision_json_uri, curr_ts, dl_list)
+        
+        # update depends on whether there exists json file
+        with open('predic_arr.json', 'w') as file:
+            json.dump(predic_arr, file)
 
         self.logger.info(f"on_demand decision end.")

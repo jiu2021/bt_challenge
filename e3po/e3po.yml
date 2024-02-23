@@ -1,11 +1,11 @@
 # This is e3po system configuration file, which should not be changed.
 
-test_group: group_Rhinobird                       # experiment group name, simulation results will be stored in their respective folders
+test_group: group_Rhinobird_10                       # experiment group name, simulation results will be stored in their respective folders
 project_path: ~
 
 e3po_settings:
   video:                                  # ------------------ The following are video settings ------------------- #
-    video_duration: 6                    # video duration, in second
+    video_duration: 10                    # video duration, in second
     chunk_duration: 2                     # chunk duration, in second
     video_fps: 30                         # video framerate, frames per second
     origin:
@@ -19,7 +19,7 @@ e3po_settings:
     qp_list: [29]                         # qp value
     preset: fast                        # preset parameter
     video_fps: 30                         # video framerate
-    gop: 60                               # group of pictures
+    gop: 30                               # group of pictures 60改30
     bf: 0                                 # B frame in ffmpeg
   motion_trace:                           # ---------------- The following are motion trace settings ---------------- #
     motion_file: release_video_1_motion_1.txt      # full name of motion trace file

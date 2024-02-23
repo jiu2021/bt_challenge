@@ -22,13 +22,15 @@ import cv2
 import numpy as np
 import shutil
 import yaml
+import torch
+import torch.nn as nn
 
 from e3po import get_logger
 from e3po.utils.data_utilities import transcode_video, segment_video, resize_video
 from e3po.approaches.Rhinobird.decision_utilities import predict_motion_tile, tile_decision, generate_dl_list
 from e3po.utils.projection_utilities import fov_to_3d_polar_coord, _3d_polar_coord_to_pixel_coord, \
     pixel_coord_to_tile, pixel_coord_to_relative_tile_coord
-
+# from lstm import LSTM
 
 def video_analysis(user_data, video_info):
     """
@@ -281,6 +283,9 @@ def download_decision(network_stats, motion_history, video_size, curr_ts, user_d
     if user_data['next_download_idx'] >= video_info['duration'] / video_info['chunk_duration']:
         return dl_list, user_data
 
+    # if len(motion_history) >= 100 and len(motion_history) % 25 == 0:
+    #     model = train_model(motion_history)
+    
     predicted_record = predict_motion_tile(motion_history, config_params['motion_history_size'], config_params['motion_prediction_size'])  # motion prediction
     tile_record = tile_decision(predicted_record, video_size, video_info['range_fov'], chunk_idx, user_data)     # tile decision
     dl_list = generate_dl_list(chunk_idx, tile_record, latest_decision, dl_list)
@@ -289,6 +294,64 @@ def download_decision(network_stats, motion_history, video_size, curr_ts, user_d
 
     return dl_list, user_data
 
+
+def train_model(motion_history):
+    seq_length = 50 # 序列长度 50
+    data = [d['motion_record'] for d in motion_history[-100:]]
+    xs, ys = [], []
+    for i in range(len(data) - seq_length - 1):
+        x = [[d['yaw'], d['pitch']] for d in data[i:(i + seq_length)]]
+        y = [data[i + seq_length]['yaw'], data[i + seq_length]['pitch']]
+        xs.append(x)
+        ys.append(y)
+    
+    X = np.array(xs)
+    Y = np.array(ys)
+
+    # Split the data into training and testing sets
+    train_size = int(len(Y) * 0.8)
+    X_train, X_test = X[:train_size], X[train_size:]
+    Y_train, Y_test = Y[:train_size], Y[train_size:]
+
+    # Convert to PyTorch tensors
+    X_train = torch.from_numpy(X_train).float()
+    Y_train = torch.from_numpy(Y_train).float()
+    X_test = torch.from_numpy(X_test).float()
+    Y_test = torch.from_numpy(Y_test).float()
+
+    model = createModel()
+
+    # Set training parameters
+    learning_rate = 0.01
+    num_epochs = 100
+
+    # Define loss function and optimizer
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    # Train the model
+    for epoch in range(num_epochs):
+        outputs = model(X_train.unsqueeze(-1)).squeeze()  # Add .squeeze() here
+        optimizer.zero_grad()
+        loss = criterion(outputs, Y_train)
+        loss.backward()
+        optimizer.step()
+
+        if (epoch + 1) % 10 == 0:
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}")
+    
+    return model
+
+def createModel():
+    # 设置超参数
+    input_size = 2  # 输入特征维度为2
+    hidden_size = 32
+    num_layers = 1
+    output_size = 2  # 输出时间步为100
+
+    # 创建模型实例 
+    model = LSTM(input_size, hidden_size, num_layers, output_size)
+    return model
 
 def generate_display_result(curr_display_frames, current_display_chunks, curr_fov, dst_video_frame_uri, frame_idx, video_size, user_data, video_info):
     """
@@ -402,7 +465,7 @@ def update_decision_info(user_data, tile_record, curr_ts):
 
     # update chunk_idx & latest_decision
     if curr_ts == 0 or curr_ts >= user_data['video_info']['pre_download_duration'] \
-            + user_data['next_download_idx'] * user_data['video_info']['chunk_duration'] * 1000:
+            + user_data['next_download_idx'] * user_data['video_info']['chunk_duration'] * 1000 + 1000:
         user_data['next_download_idx'] += 1
         user_data['latest_decision'] = []
 

@@ -19,6 +19,7 @@
 
 from copy import deepcopy
 import numpy as np
+import torch
 from e3po.utils.projection_utilities import fov_to_3d_polar_coord,\
     _3d_polar_coord_to_pixel_coord, pixel_coord_to_tile
 from sklearn.linear_model import LinearRegression
@@ -121,6 +122,63 @@ def predict_motion_tile(motion_history, motion_history_size, motion_prediction_s
 
     return predicted_record
 
+def predict_motion_tile0(motion_history, motion_history_size, motion_prediction_size, model):
+    """
+    Predicting motion with given historical information and prediction window size.
+    (As an example, users can implement their customized function.)
+
+    Parameters
+    ----------
+    motion_history: dict
+        a dictionary recording the historical motion, with the following format:
+
+    motion_history_size: int
+        the size of motion history to be used for predicting
+    motion_prediction_size: int
+        the size of motion to be predicted
+
+    Returns
+    -------
+    list
+        The predicted record list, which sequentially store the predicted motion of the future pw chunks.
+         Each motion dictionary is stored in the following format:
+            {'yaw': yaw, 'pitch': pitch, 'scale': scale}
+    """
+    # get_logger().debug(f'motion_history: {motion_history}')
+    if len(motion_history) < 100:
+        return predict_motion_tile1(motion_history, motion_history_size, motion_prediction_size)
+    
+    data = [d['motion_record'] for d in motion_history[-50:]]
+    
+    xs, ys = [], []
+    for i in range(len(data) - seq_length - 1):
+        x = [[d['yaw'], d['pitch']] for d in data[i:(i + seq_length)]]
+        y = [data[i + seq_length]['yaw'], data[i + seq_length]['pitch']]
+        xs.append(x)
+        ys.append(y)
+    
+    X = np.array(xs)
+    Y = np.array(ys)
+
+    # Split the data into training and testing sets
+    train_size = int(len(Y) * 0.8)
+    X_train, X_test = X[:train_size], X[train_size:]
+    Y_train, Y_test = Y[:train_size], Y[train_size:]
+    # Concatenate the training and test predictions
+    with torch.no_grad():
+        train_outputs = model(X_train.unsqueeze(-1)).squeeze().numpy()
+        test_outputs = model(X_test.unsqueeze(-1)).squeeze().numpy()
+
+    predicted_record_one = {'yaw': 0, 'pitch': 0, 'scale': 2}
+    predicted_record = []
+    for i in range(100): # 预测未来100个点，也就是1s
+        predicted_record_one['yaw'] = lr_yaw.predict(np.array([(i + 200) * 0.01]).reshape(-1,1))[0][0]
+        predicted_record_one['pitch'] = lr_pitch.predict(np.array([(i + 200) * 0.01]).reshape(-1,1))[0][0]
+        predicted_record_one['scale'] = 2
+        predicted_record.append(deepcopy(predicted_record_one))
+
+    return predicted_record
+
 def predict_motion_tile3(motion_history, motion_history_size, motion_prediction_size):
     """
     Predicting motion with given historical information and prediction window size.
@@ -197,7 +255,8 @@ def tile_decision(predicted_record, video_size, range_fov, chunk_idx, user_data)
     converted_width = user_data['config_params']['converted_width']
     converted_height = user_data['config_params']['converted_height']
     for predicted_motion in predicted_record:
-        _3d_polar_coord = fov_to_3d_polar_coord([float(predicted_motion['yaw']), float(predicted_motion['pitch']), 0], range_fov, sampling_size)
+        # _3d_polar_coord = fov_to_3d_polar_coord([float(predicted_motion['yaw']), float(predicted_motion['pitch']), 0], range_fov, sampling_size)
+        _3d_polar_coord = fov_to_3d_polar_coord([float(predicted_motion['yaw']), float(predicted_motion['pitch']), 0], [119, 89], sampling_size)
         pixel_coord = _3d_polar_coord_to_pixel_coord(_3d_polar_coord, config_params['projection_mode'], [converted_height, converted_width])
         coord_tile_list = pixel_coord_to_tile(pixel_coord, config_params['total_tile_num'], video_size, chunk_idx)
         unique_tile_list = [int(item) for item in np.unique(coord_tile_list)]
