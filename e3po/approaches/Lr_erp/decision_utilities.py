@@ -152,7 +152,8 @@ def tile_decision(predicted_record, video_size, range_fov, chunk_idx, user_data)
     converted_width = user_data['config_params']['converted_width']
     converted_height = user_data['config_params']['converted_height']
     for predicted_motion in predicted_record:
-        _3d_polar_coord = fov_to_3d_polar_coord([float(predicted_motion['yaw']), float(predicted_motion['pitch']), 0], range_fov, sampling_size)
+        # _3d_polar_coord = fov_to_3d_polar_coord([float(predicted_motion['yaw']), float(predicted_motion['pitch']), 0], range_fov, sampling_size)
+        _3d_polar_coord = fov_to_3d_polar_coord([float(predicted_motion['yaw']), float(predicted_motion['pitch']), 0], [119, 89], sampling_size)
         pixel_coord = _3d_polar_coord_to_pixel_coord(_3d_polar_coord, config_params['projection_mode'], [converted_height, converted_width])
         coord_tile_list = pixel_coord_to_tile(pixel_coord, config_params['total_tile_num'], video_size, chunk_idx)
         unique_tile_list = [int(item) for item in np.unique(coord_tile_list)]
