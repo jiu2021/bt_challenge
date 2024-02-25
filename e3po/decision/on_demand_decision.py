@@ -85,7 +85,7 @@ class OnDemandDecision(BaseDecision):
         user_data = None
         # pre_download_duration
         motion_history = update_motion(0, curr_ts, motion_history, motion_record[0])
-        dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info, predic_arr)
+        dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info)
         write_decision_json(self.decision_json_uri, curr_ts, dl_list)
 
 
@@ -93,7 +93,7 @@ class OnDemandDecision(BaseDecision):
         for motion_ts in motion_clock:
             curr_ts = motion_ts + self.pre_download_duration
             motion_history = update_motion(motion_ts, curr_ts, motion_history, motion_record[motion_ts])
-            dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info, predic_arr)
+            dl_list, user_data = approach.download_decision(self.network_stats, motion_history, self.video_size, curr_ts, user_data, self.video_info)
             write_decision_json(self.decision_json_uri, curr_ts, dl_list)
         
         # update depends on whether there exists json file

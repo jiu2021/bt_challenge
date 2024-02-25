@@ -24,7 +24,6 @@ from e3po.utils.projection_utilities import fov_to_3d_polar_coord,\
     _3d_polar_coord_to_pixel_coord, pixel_coord_to_tile
 from sklearn.linear_model import LinearRegression
 from e3po.utils import get_logger
-# from statsmodels.tsa.vector_ar.var_model import VAR
 
 def predict_motion_tile1(motion_history, motion_history_size, motion_prediction_size):
     """
@@ -148,70 +147,34 @@ def predict_motion_tile(motion_history, motion_history_size, motion_prediction_s
     if len(motion_history) < 100:
         return predict_motion_tile1(motion_history, motion_history_size, motion_prediction_size)
     
-    data = [[[d['motion_record']['yaw'], d['motion_record']['pitch']] for d in motion_history[-50:]]]
+    # data = [[[d['motion_record']['yaw'], d['motion_record']['pitch']] for d in motion_history[-50:]]]
+    # data = np.array(data)
+    # input_data = torch.from_numpy(data).float()
+    # with torch.no_grad():
+    #     prediction = model(input_data).squeeze()
+    # print('prediction:',prediction)
 
-    data = np.array(data)
+    # predicted_record_one = {'yaw': prediction[0].item(), 'pitch': prediction[1].item(), 'scale': 2}
+    # predicted_record = []
+    # predicted_record.append(deepcopy(predicted_record_one))
 
-    input_data = torch.from_numpy(data).float()
-
-    with torch.no_grad():
-        prediction = model(input_data).squeeze()
-
-    print('prediction:',prediction)
-
-    predicted_record_one = {'yaw': prediction[0].item(), 'pitch': prediction[1].item(), 'scale': 2}
     predicted_record = []
+    seq_length = 50 # 序列长度 50
+    data = [d['motion_record'] for d in motion_history[-100:]]
+    for i in range(len(data) - seq_length - 1):
+        raw = [[d['yaw'], d['pitch']] for d in data[i:(i + seq_length)]]
+        input_data = np.array([raw])
+        input_data = torch.from_numpy(input_data).float()
+        with torch.no_grad():
+            prediction = model(input_data).squeeze()
+        predicted_record_one = {'yaw': prediction[0].item(), 'pitch': prediction[1].item(), 'scale': 2}
+        predicted_record.append(deepcopy(predicted_record_one))
 
     # for i in range(100): # 预测未来100个点，也就是1s
     #     predicted_record_one['yaw'] = lr_yaw.predict(np.array([(i + 200) * 0.01]).reshape(-1,1))[0][0]
     #     predicted_record_one['pitch'] = lr_pitch.predict(np.array([(i + 200) * 0.01]).reshape(-1,1))[0][0]
     #     predicted_record_one['scale'] = 2
     #     predicted_record.append(deepcopy(predicted_record_one))
-
-    predicted_record.append(deepcopy(predicted_record_one))
-    return predicted_record
-
-def predict_motion_tile3(motion_history, motion_history_size, motion_prediction_size):
-    """
-    Predicting motion with given historical information and prediction window size.
-    (As an example, users can implement their customized function.)
-
-    Parameters
-    ----------
-    motion_history: dict
-        a dictionary recording the historical motion, with the following format:
-
-    motion_history_size: int
-        the size of motion history to be used for predicting
-    motion_prediction_size: int
-        the size of motion to be predicted
-
-    Returns
-    -------
-    list
-        The predicted record list, which sequentially store the predicted motion of the future pw chunks.
-         Each motion dictionary is stored in the following format:
-            {'yaw': yaw, 'pitch': pitch, 'scale': scale}
-    """
-    # Prepare the input data for VAR model
-    hw = [[d['motion_record']['yaw'], d['motion_record']['pitch']]
-                           for d in motion_history]
-    get_logger().debug(f'hw_VAR: {hw}')
-    if len(hw) < 1000:
-        return predict_motion_tile1(motion_history, motion_history_size, motion_prediction_size)
-    
-    motion_data = np.array(list(hw)[-motion_history_size:])
-
-    # Fit the VAR model
-    model = VAR(motion_data)
-    model_fit = model.fit()
-
-    # Make predictions
-    predicted_motion = model_fit.forecast(model_fit.endog, steps=motion_prediction_size)
-
-    # Format the predicted motion
-    predicted_record = [{'yaw': predicted_motion[i][0], 'pitch': predicted_motion[i][1],
-                         'scale': 2.0} for i in range(motion_prediction_size)]
 
     return predicted_record
 

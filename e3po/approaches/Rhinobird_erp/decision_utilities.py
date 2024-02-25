@@ -171,50 +171,6 @@ def predict_motion_tile(motion_history, motion_history_size, motion_prediction_s
     predicted_record.append(deepcopy(predicted_record_one))
     return predicted_record
 
-def predict_motion_tile3(motion_history, motion_history_size, motion_prediction_size):
-    """
-    Predicting motion with given historical information and prediction window size.
-    (As an example, users can implement their customized function.)
-
-    Parameters
-    ----------
-    motion_history: dict
-        a dictionary recording the historical motion, with the following format:
-
-    motion_history_size: int
-        the size of motion history to be used for predicting
-    motion_prediction_size: int
-        the size of motion to be predicted
-
-    Returns
-    -------
-    list
-        The predicted record list, which sequentially store the predicted motion of the future pw chunks.
-         Each motion dictionary is stored in the following format:
-            {'yaw': yaw, 'pitch': pitch, 'scale': scale}
-    """
-    # Prepare the input data for VAR model
-    hw = [[d['motion_record']['yaw'], d['motion_record']['pitch']]
-                           for d in motion_history]
-    get_logger().debug(f'hw_VAR: {hw}')
-    if len(hw) < 1000:
-        return predict_motion_tile1(motion_history, motion_history_size, motion_prediction_size)
-    
-    motion_data = np.array(list(hw)[-motion_history_size:])
-
-    # Fit the VAR model
-    model = VAR(motion_data)
-    model_fit = model.fit()
-
-    # Make predictions
-    predicted_motion = model_fit.forecast(model_fit.endog, steps=motion_prediction_size)
-
-    # Format the predicted motion
-    predicted_record = [{'yaw': predicted_motion[i][0], 'pitch': predicted_motion[i][1],
-                         'scale': 2.0} for i in range(motion_prediction_size)]
-
-    return predicted_record
-
 def tile_decision(predicted_record, video_size, range_fov, chunk_idx, user_data):
     """
     Deciding which tiles should be transmitted for each chunk, within the prediction window

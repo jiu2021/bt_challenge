@@ -40,7 +40,7 @@ def createModel():
 
     # 创建模型实例 
     model = LSTM(input_size, hidden_size, num_layers, output_size)
-    print('创建model')
+    # print('创建model')
     return model
 
 my_lstm_model = createModel()
@@ -246,7 +246,7 @@ def preprocess_video(source_video_uri, dst_video_folder, chunk_info, user_data, 
     return user_video_spec, user_data
 
 
-def download_decision(network_stats, motion_history, video_size, curr_ts, user_data, video_info, predic_arr):
+def download_decision(network_stats, motion_history, video_size, curr_ts, user_data, video_info):
     """
     Self defined download strategy
 
@@ -293,7 +293,7 @@ def download_decision(network_stats, motion_history, video_size, curr_ts, user_d
         train_model(motion_history, my_lstm_model)
 
     predicted_record = predict_motion_tile(motion_history, config_params['motion_history_size'], config_params['motion_prediction_size'], my_lstm_model)  # motion prediction
-    predic_arr.append(predicted_record[0])
+    # predic_arr.append(predicted_record[0])
 
     # predicted_record = predict_motion_tile(motion_history, config_params['motion_history_size'], config_params['motion_prediction_size'])  # motion prediction
     tile_record = tile_decision(predicted_record, video_size, video_info['range_fov'], chunk_idx, user_data)     # tile decision
@@ -494,7 +494,7 @@ def train_model(motion_history, model):
 
     # Set training parameters
     learning_rate = 0.005
-    num_epochs = 200
+    num_epochs = 300
 
     # Define loss function and optimizer
     criterion = nn.MSELoss()
@@ -508,8 +508,8 @@ def train_model(motion_history, model):
         loss.backward()
         optimizer.step()
 
-        if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}")
+        # if (epoch + 1) % 10 == 0:
+        #     print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {loss.item():.4f}")
 
         if loss.item() <= 0.0005:
             break

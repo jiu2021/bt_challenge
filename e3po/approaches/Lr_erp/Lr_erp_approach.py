@@ -85,7 +85,7 @@ def read_config():
         the corresponding config parameters
     """
 
-    config_path = os.path.dirname(os.path.abspath(__file__)) + "/erp.yml"
+    config_path = os.path.dirname(os.path.abspath(__file__)) + "/Lr_erp.yml"
     with open(config_path, 'r', encoding='UTF-8') as f:
         opt = yaml.safe_load(f.read())['approach_settings']
 
@@ -230,7 +230,7 @@ def preprocess_video(source_video_uri, dst_video_folder, chunk_info, user_data, 
     return user_video_spec, user_data
 
 
-def download_decision(network_stats, motion_history, video_size, curr_ts, user_data, video_info):
+def download_decision(network_stats, motion_history, video_size, curr_ts, user_data, video_info, predic_arr):
     """
     Self defined download strategy
 
