@@ -160,15 +160,17 @@ def predict_motion_tile(motion_history, motion_history_size, motion_prediction_s
 
     predicted_record = []
     seq_length = 50 # 序列长度 50
-    data = [d['motion_record'] for d in motion_history[-100:]]
-    for i in range(len(data) - seq_length - 1):
-        raw = [[d['yaw'], d['pitch']] for d in data[i:(i + seq_length)]]
-        input_data = np.array([raw])
+    data = [[d['motion_record']['yaw'], d['motion_record']['pitch']] for d in motion_history[-50:]]
+    for i in range(seq_length):
+        input_data = np.array([data])
         input_data = torch.from_numpy(input_data).float()
         with torch.no_grad():
             prediction = model(input_data).squeeze()
         predicted_record_one = {'yaw': prediction[0].item(), 'pitch': prediction[1].item(), 'scale': 2}
         predicted_record.append(deepcopy(predicted_record_one))
+
+        del(data[0])
+        data.append([prediction[0].item(), prediction[1].item()])
 
     # for i in range(100): # 预测未来100个点，也就是1s
     #     predicted_record_one['yaw'] = lr_yaw.predict(np.array([(i + 200) * 0.01]).reshape(-1,1))[0][0]
