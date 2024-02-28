@@ -21,6 +21,7 @@ import os
 import cv2
 import numpy as np
 import os.path as osp
+from copy import deepcopy
 from e3po.utils.json import get_video_json_size
 from e3po.utils.projection_utilities import \
     fov_to_3d_polar_coord, _3d_polar_coord_to_pixel_coord
@@ -69,8 +70,7 @@ def calc_arrival_ts(settings, dl_list, video_size, network_stats):
     """
 
     arrival_list = {}
-    last_chunk_idx = -1
-    last_chunk_size = -1
+
     for row in dl_list:
         chunk_idx = row['chunk_idx']
         chunk_size = 0
@@ -80,7 +80,7 @@ def calc_arrival_ts(settings, dl_list, video_size, network_stats):
         playable_ts = row['decision_data']['system_ts'] + download_delay \
                       + network_stats[0]['rtt'] + network_stats[0]['rendering_delay']
 
-        if chunk_idx != last_chunk_idx:                # new chunk
+        if chunk_idx not in arrival_list.keys():                # new chunk
             tmp_arrival_list = []
             for tile_id in row['decision_data']['tile_info']:
                 tmp_arrival_list.append(
@@ -94,11 +94,7 @@ def calc_arrival_ts(settings, dl_list, video_size, network_stats):
                 'chunk_size': chunk_size,
                 'tile_list': tmp_arrival_list
             }
-            last_chunk_idx = chunk_idx
-            last_chunk_size = chunk_size
         else:                                           # same chunk
-            chunk_size += last_chunk_size
-            last_chunk_size = chunk_size
             for tile_id in row['decision_data']['tile_info']:
                 arrival_list[chunk_idx]['tile_list'].append(
                     {
@@ -106,7 +102,7 @@ def calc_arrival_ts(settings, dl_list, video_size, network_stats):
                         'tile_id': tile_id
                     }
                 )
-            arrival_list[chunk_idx]['chunk_size'] = chunk_size
+            arrival_list[chunk_idx]['chunk_size'] += chunk_size
     settings.logger.info("[decision to playable] end")
 
     return arrival_list
@@ -133,9 +129,18 @@ def get_curr_display_chunks(arrival_list, curr_ts):
     curr_display_chunks = []
     for arrival_idx in range(len(arrival_list)):
         if arrival_list[arrival_idx]['tile_list'][0]['playable_ts'] <= curr_ts:
-            _arrival_list = arrival_list[arrival_idx]
-            curr_display_chunks.append(_arrival_list)
-
+            _tile_list = []
+            arrival_chunk_tile_list = arrival_list[arrival_idx]['tile_list']
+            for _tile_idx in range(len(arrival_chunk_tile_list)):      # check the playable_ts for each tile
+                if arrival_chunk_tile_list[_tile_idx]['playable_ts'] <= curr_ts:
+                    _tile_list.append(arrival_chunk_tile_list[_tile_idx])
+                else:
+                    break
+            _arrival_chunk = deepcopy(arrival_list[arrival_idx])
+            _arrival_chunk['tile_list'] = _tile_list
+            curr_display_chunks.append(_arrival_chunk)
+        else:
+            continue
     return curr_display_chunks
 
 
